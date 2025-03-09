@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--DAO层是直接与数据库进行交互的层,xml文件自然是写道这一层模块中了-->
+
+
+
+<mapper namespace="com.lwc.Dao.UserDao">
+    <insert id="addUser" parameterType="com.lwc.domain.User" useGeneratedKeys="true" keyProperty="id" >
+        insert into
+        t_user(
+                phone,
+                email,
+                password,
+                salt,
+                createTime
+        )values (
+                 #{phone},
+                 #{email},
+                 #{password},
+                 #{salt},
+                 #{createTime}
+        )
+
+
+
+
+
+    </insert>
+    <insert id="addUserInfo" parameterType="com.lwc.domain.UserInfo" >
+        insert into
+            t_user_info(
+            userId,
+            nick,
+            avatar,
+            sign,
+            gender,
+            birth,
+            createTime
+        )values (
+            #{userId},
+            #{nick},
+            #{avatar},
+            #{sign},
+            #{gender},
+            #{birth},
+            #{createTime}
+                )
+    </insert>
+
+    <!--不需要返回值,传入参数用@param给注解过了,并且传入参数也不是封装类,所以这类不用写
+    resultType和parameterTyoe-->
+    <insert id="addRefreshToken">
+        insert into
+                t_refresh_token(
+                               refreshToken,
+                               userId,
+                               createTime
+                              )values(
+                                #{refreshToken},
+                                #{userId},
+                                #{createTime}
+                              )
+    </insert>
+
+
+    <update id="updateUserInfos" parameterType="com.lwc.domain.UserInfo">
+        update
+            t_user_info
+        set
+            <if test="nick!=null and nick!=''">
+                nick=#{nick},
+            </if>
+            <if test="avatar!=null">
+                avatar=#{avatar},
+            </if>
+            <if test="sign!=null">
+                sign=#{sign},
+            </if>
+            <if test="birth!=null and birth!=''">
+                birth=#{birth},
+            </if>
+            <if test="gender!=null and gender!=''">
+                gender=#{gender},
+            </if>
+            updateTime=#{updateTime}
+        where
+            userId=#{userId}
+    </update>
+    <update id="updateUsers" parameterType="com.lwc.domain.User">
+        update
+            t_user
+        set
+        <if test="phone!=null and phone!=''">
+            phone=#{phone},
+        </if>
+        <if test="email!=null and email!=''">
+            email=#{email},
+        </if>
+        <if test="password!=null and password!=''">
+            password=#{password},
+        </if>
+            updateTime=#{updateTime}
+        where
+            id=#{id}
+    </update>
+
+    <!--不需要返回值,传入参数用@param给注解过了,并且传入参数也不是封装类,所以这类不用写
+resultType和parameterTyoe-->
+    <delete id="deleteRefreshToken">
+        delete from
+                   t_refresh_token
+                where
+                    userId=#{userId}
+    </delete>
+
+
+    <select id="getUserByPhone" parameterType="java.lang.String" resultType="com.lwc.domain.User">
+        select
+            *
+        from
+            t_user
+        where
+            phone=#{phone}
+    </select>
+    <select id="getUserById" parameterType="java.lang.Long" resultType="com.lwc.domain.User">
+        select
+            *
+        from
+            t_user
+        where
+            id=#{id}
+    </select>
+    <select id="getUserInfoById" parameterType="java.lang.Long" resultType="com.lwc.domain.UserInfo">
+        select
+            *
+        from
+            t_user_info
+        where
+            userId=#{userId}
+    </select>
+
+    <select id="getUserInfoByUserIds" resultType="com.lwc.domain.UserInfo">
+        select
+            *
+        from
+            t_user_info
+        where
+            1=1
+        <if test="followingIdSet !=null and followingIdSet.size() > 0">
+            and userId in
+            <foreach collection="followingIdSet" item ="followingId" index="index" open="(" close=")" separator=",">
+                #{followingId}
+            </foreach>
+        </if>
+    </select>
+
+    <!--查一查数据库里一共有多少条符合要求的数据(可能需要模糊查询也可能不用)-->
+    <select id="pageCountUserInfos" resultType="java.lang.Integer" parameterType="java.util.Map">
+        select
+            count(1)
+        from
+            t_user_info
+        where
+            1=1
+        <if test="nick !=null and nick !='' ">
+            and nick like '%${nick}%'
+        </if>
+    </select>
+
+    <!--查询具体的数据列表返回给前端去分页展示,对于可能无传值的形参nick采用动态sql来实现-->
+    <select id="pageListUserInfos" resultType="com.lwc.domain.UserInfo" parameterType="java.util.Map">
+        select
+            *
+        from
+            t_user_info
+        where
+            1=1
+        <if test="nick!=null and nick!=''">
+            and nick like '%${nick}%'
+        </if>
+        /*查完以后按主键id降序排序，最后再显示特定的一页*/
+        order by id desc
+        limit #{start},#{limit}
+
+    </select>
+    <select id="getRefreshTokenDetail" resultType="com.lwc.domain.RefreshTokenDetail" parameterType="java.lang.String">
+        select
+            *
+        from
+            t_refresh_token
+        where
+            refreshToken=#{refreshToken}
+    </select>
+    <select id="checkRefreshToken" resultType="com.lwc.domain.RefreshTokenDetail" parameterType="java.lang.String">
+        select
+            *
+        from
+            t_refresh_token
+        where
+            refreshToken=#{refreshToken}
+    </select>
+    <select id="getSaltByUserId" resultType="java.lang.String">
+        select
+            salt
+        from
+            t_user
+        where
+            id=#{id}
+    </select>
+
+</mapper>
+
+
